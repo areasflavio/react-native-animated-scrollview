@@ -1,12 +1,56 @@
-import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useRef, useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+} from 'react-native';
+import { ProgressBar } from '../components/ProgressBar';
+
+type ScrollProps = {
+  layoutMeasurement: {
+    height: number;
+  };
+  contentOffset: {
+    y: number;
+  };
+  contentSize: {
+    height: number;
+  };
+};
 
 export function Post() {
+  const [percentValue, setPercentValue] = useState(0);
+  const scrollRef = useRef<ScrollView>(null);
+  const dimensions = useWindowDimensions();
+
+  const handleMoveToTop = () => {
+    scrollRef.current?.scrollTo({ y: 0, animated: true });
+  };
+
+  const scrollPercent = ({
+    contentOffset,
+    contentSize,
+    layoutMeasurement,
+  }: ScrollProps) => {
+    const visibleContent = Math.ceil(
+      (dimensions.height / contentSize.height) * 100
+    );
+    const value = Math.round(
+      ((layoutMeasurement.height + contentOffset.y) / contentSize.height) * 100
+    );
+    setPercentValue(value < visibleContent ? 0 : value);
+  };
+
   return (
     <View style={styles.container}>
       <ScrollView
+        ref={scrollRef}
         contentContainerStyle={styles.content}
         showsVerticalScrollIndicator={false}
+        onScroll={(e) => scrollPercent(e.nativeEvent)}
+        scrollEventThrottle={16} // IOS
       >
         <Text style={styles.title}>Lorem, ipsum.</Text>
         <Text style={styles.text}>
@@ -78,6 +122,8 @@ export function Post() {
           ipsa maiores quae.
         </Text>
       </ScrollView>
+
+      <ProgressBar value={percentValue} onMoveToTop={handleMoveToTop} />
     </View>
   );
 }
